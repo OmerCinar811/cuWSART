@@ -1,5 +1,5 @@
 CC = nvcc
-CFLAGS = -g
+CFLAGS = -g -Wall -
 LFLAGS = 
 BIN = 
 OBJ = 
