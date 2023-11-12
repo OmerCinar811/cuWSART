@@ -8,6 +8,11 @@
                                                 V        |
     Read image --> make sinogram --> wsart --> wbp --> wfp --> wbp --> out
 
+        A
+        |
+        |
+   On this step
+
 */
 
 int main(int argc, char const *argv[]) {
@@ -19,13 +24,11 @@ int main(int argc, char const *argv[]) {
     const char *in_file_name;
     const char *sin_file_name = "sinogram.png";
     const char *out_file_name;
+    png_t *in_png;
+    png_t *sin_png;
+    png_t *out_png;
 
     cudaError_t cuda_ret;
-
-    //fopen infile
-    //fopen sinfile
-    //fopen outfile
-
     if(argc == 1) {
         printf("\nERROR: Missing Input file and output file arguments\n");
         printf("Expected 2 arguments, received 0");
@@ -44,8 +47,12 @@ int main(int argc, char const *argv[]) {
         exit(0);
     }
 
+    in_file = fopen(in_file_name, "rb");
+    //fopen sinfile
+    //fopen outfile
 
-    //fclose infile
+
+    fclose(in_file);
     //fclose sinfile
     //fclose outfile
 
