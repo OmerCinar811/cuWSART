@@ -85,5 +85,6 @@ void read_png(char *file_name) {
     png_set_rows(p_png, p_info, row_pointers);
     png_read_image(p_png, row_pointers);
     png_read_end(p_png, p_endinfo);
+    fclose(fp); 
 
 } // read_png
