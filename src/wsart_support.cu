@@ -24,19 +24,14 @@
 //     fclose(fp);
 // }
 
-png_t create_png_wrapper(FILE *fp) {
-    
-}
-
 /**
- * @brief Reads in a png
- *        Assumes that file is a png
+ * @brief Create a png wrapper object
  * 
- * @param file_name string for file name
+ * @param fp 
+ * @return png_t 
  */
-void read_png(char *file_name) {
-
-    FILE *fp = fopen(file_name, "rb"); // open file
+png_t create_png_wrapper(FILE *fp) {
+    png_t out;
 
     if(!fp) { //check if file was able to be opened
         printf("Could not open file\n");
@@ -45,15 +40,19 @@ void read_png(char *file_name) {
 
     // Creating png read struct and checking if it was created
     png_structp p_png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    
     if(!p_png) {
         printf("Could not create png read struct pointer\n");
         exit(PNG_STRUCT_ERR);
     }
 
+    png_structp p_png_w = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if(!p_png_w) {
+        printf("Could not create png write struct pointer\n");
+        exit(PNG_STRUCT_W_ERR);
+    }
+
     // Creating png info structure and checking if it was created
     png_infop p_info = png_create_info_struct(p_png);
-
     if(!p_info) {
         png_destroy_read_struct(&p_png, (png_infopp)NULL, (png_infopp)NULL); // free any mem of png structs
         printf("Could not create png info struct pointer\n");
@@ -63,35 +62,47 @@ void read_png(char *file_name) {
     png_infop p_endinfo = png_create_info_struct(p_png);
     if (!p_endinfo) {
         png_destroy_read_struct(&p_png, &p_info, (png_infopp)NULL);
-        // dealing with error
+        exit(PNG_ENDINF_STR_ERR);
     }
-
+    out.p_png = p_png;
+    out.p_info = p_info;
+    out.p_endinfo = p_endinfo;
     // set file pointer to png struct
     png_init_io(p_png, fp);
-    png_set_sig_bytes(p_png, 8); //tells library to ignore first 8 bytes (aka magic number)
 
+    return out;
+}
 
+void destroy_png_wrapper(png_t *png) {
+    png_destroy_read_struct(&(png->p_png), NULL, (png_infopp)NULL);
+    png_destroy_write_struct(&(png->p_png_w), NULL);
+}
+
+/**
+ * @brief Reads in a png
+ *        Assumes that file is a png
+ * 
+ * @param file_name string for file name
+ */
+void read_png(png_t *png) {
+
+    png_set_sig_bytes(png->p_png, 8); //tells library to ignore first 8 bytes (aka magic number)
     // read info from the png, including the info before the data and the header
-    png_read_info(p_png, p_info);
+    png_read_info(png->p_png, png->p_info);
     uint32_t width, height;
     int bit_depth, color_type, interlace_type, compression_type, filter_method;
     
     // Get image header data
-    png_get_IHDR(p_png, p_info,  &width, &height, &bit_depth, &color_type, &interlace_type, NULL, NULL);
-
+    png_get_IHDR(png->p_png, png->p_info,  &width, &height, &bit_depth, &color_type, &interlace_type, NULL, NULL);
 
     // Read the actual png image data
-    png_bytepp row_pointers = (png_bytepp)png_malloc(p_png, sizeof(png_bytepp)*height);
+    uint8_t **row_pointers = (uint8_t**)png_malloc(png->p_png, sizeof(png_bytepp)*height);
     for(int i = 0; i < height; i++) {
-        row_pointers[i] = (png_bytep)png_malloc(p_png, width * 1);
+        row_pointers[i] = (uint8_t*)png_malloc(png->p_png, width * 1);
     }
 
-    png_set_rows(p_png, p_info, row_pointers);
-    png_read_image(p_png, row_pointers);
-    png_read_end(p_png, p_endinfo);
-    fclose(fp); 
-
-    // TODO: verify that this returns the info I think it does. 
-    //       Also figure out a way to pass pointer out of this func
+    png_set_rows(png->p_png, png->p_info, row_pointers);
+    png_read_image(png->p_png, row_pointers);
+    png_read_end(png->p_png, png->p_endinfo);
 
 } // read_png
