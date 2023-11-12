@@ -24,6 +24,10 @@
 //     fclose(fp);
 // }
 
+png_t create_png_wrapper(FILE *fp) {
+    
+}
+
 /**
  * @brief Reads in a png
  *        Assumes that file is a png
@@ -86,5 +90,8 @@ void read_png(char *file_name) {
     png_read_image(p_png, row_pointers);
     png_read_end(p_png, p_endinfo);
     fclose(fp); 
+
+    // TODO: verify that this returns the info I think it does. 
+    //       Also figure out a way to pass pointer out of this func
 
 } // read_png
