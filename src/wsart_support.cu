@@ -56,6 +56,12 @@ void read_png(char *file_name) {
         exit(PNG_INF_STR_ERR);
     } 
 
+    png_infop p_endinfo = png_create_info_struct(p_png);
+    if (!p_endinfo) {
+        png_destroy_read_struct(&p_png, &p_info, (png_infopp)NULL);
+        // dealing with error
+    }
+
     // set file pointer to png struct
     png_init_io(p_png, fp);
     png_set_sig_bytes(p_png, 8); //tells library to ignore first 8 bytes (aka magic number)
@@ -76,6 +82,8 @@ void read_png(char *file_name) {
         row_pointers[i] = (png_bytep)png_malloc(p_png, width * 1);
     }
 
-     
+    png_set_rows(p_png, p_info, row_pointers);
+    png_read_image(p_png, row_pointers);
+    png_read_end(p_png, p_endinfo);
 
 } // read_png
