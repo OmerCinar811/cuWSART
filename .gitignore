@@ -9,6 +9,7 @@
 .vscode/*.code-snippets
 
 src/*.png
+src/EXAMPLE.cu
 
 # Local History for Visual Studio Code
 .history/
