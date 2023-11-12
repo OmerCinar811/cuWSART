@@ -1,6 +1,6 @@
 CC = nvcc
 CFLAGS = -O3 -g -I/usr/include/cuda/include
-LFLAGS = -lcudart -L/usr/local/cuda/lib64 -lpng
+LFLAGS = -lcudart -lpng -L/usr/local/cuda/lib64
 
 default: wsart
 

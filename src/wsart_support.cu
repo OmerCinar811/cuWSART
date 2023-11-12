@@ -1,7 +1,9 @@
 #include "wsart_support.h"
 
-void read_png(char *file_name)
-{
+png_infop info_ptr;
+png_bytepp row_pointers;
+
+void read_png(char *file_name) {
     FILE *fp = fopen(file_name, "rb");
     png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     info_ptr = png_create_info_struct(png_ptr);
@@ -12,8 +14,7 @@ void read_png(char *file_name)
     fclose(fp);
 }
 
-void write_png(char *file_name)
-{
+void write_png(char *file_name) {
     FILE *fp = fopen(file_name, "wb");
     png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_init_io(png_ptr, fp);

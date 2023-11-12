@@ -1,16 +1,14 @@
 # Object files
 *.o
 
-# Binary location:
-./bin/*
-./bin/*.o
-
 .vscode/*
 .vscode/settings.json
 .vscode/tasks.json
 .vscode/launch.json
 .vscode/extensions.json
 .vscode/*.code-snippets
+
+src/*.png
 
 # Local History for Visual Studio Code
 .history/
