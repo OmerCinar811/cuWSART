@@ -69,6 +69,7 @@ png_t create_png_wrapper(FILE *fp) {
     out.p_endinfo = p_endinfo;
     // set file pointer to png struct
     png_init_io(p_png, fp);
+    png_init_io(p_png_w, fp);
 
     return out;
 } // create
@@ -115,12 +116,26 @@ void read_png(png_t *png) {
         row_pointers[i] = (uint8_t*)png_malloc(png->p_png, width * 1);
     }
 
-    png_set_rows(png->p_png, png->p_info, row_pointers);
+    //png_set_rows(png->p_png, png->p_info, row_pointers);
     png_read_image(png->p_png, row_pointers);
     png_read_end(png->p_png, png->p_endinfo);
 
 } // read_png
 
-void write_png(png_t *png, png_t *out) {
+void write_png(png_t *png) {
+
+    png_set_IHDR(png->p_png_w,
+                 png->p_info,
+                 png->width,
+                 png->height,
+                 png->hdr.bit_depth,
+                 png->hdr.color_type,
+                 png->hdr.interlace_type,
+                 png->hdr.compression_type,
+                 png->hdr.filter_method);
+
+    png_set_rows(png->p_png_w, png->p_info, png->row_pointers);
+    png_write_png(png->p_png_w, png->p_info, PNG_TRANSFORM_IDENTITY, NULL);
+    
 
 } // write_png
