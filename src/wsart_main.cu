@@ -43,10 +43,15 @@ int main(int argc, char const *argv[]) {
         exit(0);
     }
 
-    img_t img;
+    img_t inimg;
+    img_t outimg;
     //printf("got here");
     //exit(0);
-    read_tiff(in_file_name, &img);
+    read_tiff(in_file_name, &inimg);
+
+    copyimg(&inimg, &outimg);
+
+    write_tiff(out_file_name, &outimg);
 
     return 0;
 }

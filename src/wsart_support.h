@@ -12,6 +12,8 @@ typedef struct {
 
 
 void read_tiff(const char*, img_t*);
-void write_tiff(const char*, img_t*);
+int write_tiff(const char*, img_t*);
+void copyimg(img_t*, img_t*);
+
 
 #endif

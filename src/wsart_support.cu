@@ -149,7 +149,7 @@ void read_tiff(const char *filename, img_t *tiff) {
     tiff->xmax = xsize;
     tiff->ymax = ysize;
 
-    tiff->data = (float**)calloc(tiff->xmax * tiff-> ymax, 4);
+    tiff->data = (float**)calloc(tiff->xmax * tiff->ymax, 4);
 
 
     TIFFGetField(tiff_handle, TIFFTAG_PLANARCONFIG, &planarconfig);
@@ -159,14 +159,16 @@ void read_tiff(const char *filename, img_t *tiff) {
 }
 
 
-int tiffwrite (char* fname, img_t* img) {
+int write_tiff(const char *fname, img_t *img) {
     
     TIFF *tif;
     char* p;
 
 	tif = TIFFOpen(fname, "w");
-	if (!tif) return -1;
-
+	if (!tif) {
+        printf("\nCould not open tif during write\n");
+        return -1;
+    }
 	/* Let's start with some general tags */
 
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, img->xmax);
@@ -185,11 +187,18 @@ int tiffwrite (char* fname, img_t* img) {
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC,    PHOTOMETRIC_MINISBLACK);
     TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT,   SAMPLEFORMAT_IEEEFP);
     
-    p = (char*)img->data + 4*img->xmax*img->ymax;
+    p = (char*)img->data;
     TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, img->ymax);
-	TIFFWriteEncodedStrip(tif, 0, p, 4*img->xmax*img->ymax);
+	TIFFWriteRawStrip(tif, 0, p, 4*img->xmax*img->ymax);
 
 	TIFFClose(tif);
 
 	return 0;
+}
+
+void copyimg(img_t *in, img_t *out) {
+    out->xmax = in->xmax;
+    out->ymax = in->ymax;
+    out->data = (float**)calloc(out->xmax*out->ymax, 4);
+    memcpy(out->data, in->data, 4*out->xmax*out->ymax);
 }
