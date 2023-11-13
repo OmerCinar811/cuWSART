@@ -22,7 +22,7 @@ int main(int argc, char const *argv[]) {
     //const char *sin_file_name = "sinogram.png";
     const char *out_file_name;
     
-    //cudaError_t cuda_ret;
+    cudaError_t cuda_ret = cudaErrorUnknown;
     
     if(argc == 1) {
         printf("\nERROR: Missing Input file and output file arguments\n\n");
@@ -41,6 +41,9 @@ int main(int argc, char const *argv[]) {
                "\n\n");
         exit(0);
     }
+
+    img_t img;
+    read_tiff(in_file_name, &img);
 
     return 0;
 }
