@@ -6,7 +6,6 @@ int TIFFReadContigStripData(TIFF* tif, int elemsize, int bpp, void* dataptr) {
     long tiffstripsize;
     unsigned char* p;
     unsigned short* ps;
-    char s[255];
     int i,j;
     uint32 row, h, w, ofs;
     uint32 rowsperstrip = (uint32)-1;
@@ -92,7 +91,7 @@ int TIFFReadContigStripData(TIFF* tif, int elemsize, int bpp, void* dataptr) {
 				}
 			
 			}
-			else if ((bpp=16) && (elemsize==6))	/* 48-bit color RGB */
+			else if ((bpp==16) && (elemsize==6))	/* 48-bit color RGB */
 			{
 				ofs=0;
 				for (i=0; i<nrows*scanlinesize; i+=6)	/* one element is 3 shorts, thus the increment */
@@ -128,11 +127,8 @@ void read_tiff(const char *filename, img_t *tiff) {
 
     TIFF *tiff_handle;
     uint32_t xsize, ysize;
-    int bytes;
     uint16_t bitspersample, samplesperpixel, planarconfig, photometric, sampleformat;
-    char s[256];
-    double *pd; float *pf; long idx;
-
+    
     tiff_handle = TIFFOpen(filename, "r");
     if(!tiff_handle) {
         printf("Unable to open tiff\n\n");
