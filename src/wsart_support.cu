@@ -121,6 +121,6 @@ void read_png(png_t *png) {
 
 } // read_png
 
-void write_png(png_t *png, uint8_t **row_data) {
+void write_png(png_t *png, png_t *out) {
 
 } // write_png

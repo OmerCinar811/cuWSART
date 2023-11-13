@@ -27,7 +27,7 @@ typedef struct {
 png_t create_png_wrapper(FILE*);
 void destroy_png_wrapper(png_t*);
 void read_png(png_t*);
-void write_png(png_t*, uint8_t**);
+void write_png(png_t*, png_t*);
 
 
 // void read_png(char*);
