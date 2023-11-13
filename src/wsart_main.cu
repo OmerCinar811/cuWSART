@@ -49,23 +49,17 @@ int main(int argc, char const *argv[]) {
     }
 
     in_file = fopen(in_file_name, "rb");
-    //fopen sinfile
     out_file = fopen(out_file_name, "wb");
+    //fopen sinfile
 
-    in_png = create_png_wrapper(in_file);
-    out_png = create_png_wrapper(out_file);
-
-    read_png(&in_png);
-    out_png.p_info = in_png.p_info;
-    out_png.row_pointers = in_png.row_pointers;
-    write_png(&out_png);
-
-    destroy_png_wrapper(&in_png);
-    destroy_png_wrapper(&out_png); 
+    // read_png(in_file, &in_png);
+    // memcpy(&out_png, &in_png, sizeof(in_png));
+    // write_png(out_file, &out_png);
+ 
 
     fclose(in_file);
-    //fclose sinfile
     fclose(out_file);
+    //fclose sinfile
 
     return 0;
 }
