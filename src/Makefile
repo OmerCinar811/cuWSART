@@ -1,8 +1,11 @@
 CC = nvcc
 CFLAGS = -O3 -g -I/usr/include/cuda/include
-LFLAGS = -lcudart -lpng -L/usr/local/cuda/lib64
+LFLAGS = -lcudart -ltiff -L/usr/local/cuda/lib64
 
 default: wsart
+
+test:
+	./wsart ../Shepp_logan.tif out.tif
 
 wsart_main.o: wsart_main.cu wsart_kernel.cu wsart_support.h
 	$(CC) -c -o $@ wsart_main.cu $(CFLAGS)
