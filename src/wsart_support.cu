@@ -71,12 +71,12 @@ png_t create_png_wrapper(FILE *fp) {
     png_init_io(p_png, fp);
 
     return out;
-}
+} // create
 
 void destroy_png_wrapper(png_t *png) {
     png_destroy_read_struct(&(png->p_png), NULL, (png_infopp)NULL);
     png_destroy_write_struct(&(png->p_png_w), NULL);
-}
+} // destroy
 
 /**
  * @brief Reads in a png
@@ -89,11 +89,25 @@ void read_png(png_t *png) {
     png_set_sig_bytes(png->p_png, 8); //tells library to ignore first 8 bytes (aka magic number)
     // read info from the png, including the info before the data and the header
     png_read_info(png->p_png, png->p_info);
-    uint32_t width, height;
-    int bit_depth, color_type, interlace_type, compression_type, filter_method;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    int bit_depth = 0;
+    int color_type = 0;
+    int interlace_type = 0;
+    int compression_type = 0;
+    int filter_method = 0;
     
     // Get image header data
     png_get_IHDR(png->p_png, png->p_info,  &width, &height, &bit_depth, &color_type, &interlace_type, NULL, NULL);
+    
+    // assign various information about png to struct
+    png->height = height;
+    png->width = width;
+    png->hdr.bit_depth = bit_depth;
+    png->hdr.color_type = color_type;
+    png->hdr.interlace_type = interlace_type;
+    png->hdr.compression_type = compression_type;
+    png->hdr.filter_method = filter_method;
 
     // Read the actual png image data
     uint8_t **row_pointers = (uint8_t**)png_malloc(png->p_png, sizeof(png_bytepp)*height);
@@ -106,3 +120,7 @@ void read_png(png_t *png) {
     png_read_end(png->p_png, png->p_endinfo);
 
 } // read_png
+
+void write_png(png_t *png, uint8_t **row_data) {
+
+} // write_png
