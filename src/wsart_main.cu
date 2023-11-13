@@ -20,7 +20,7 @@ int main(int argc, char const *argv[]) {
     //const char *sin_file_name = "sinogram.png";
     const char *out_file_name;
     
-    cudaError_t cuda_ret = cudaErrorUnknown;
+    //cudaError_t cuda_ret = cudaErrorUnknown;
     
     if(argc == 1) {
         printf("\nERROR: Missing Input file and output file arguments\n\n");

@@ -5,7 +5,6 @@
 #include "tiffio.h"
 #include "math.h"
 #include "math_constants.h"
-#include "math_functions.h"
 
 #define SQR(X)		((X)*(X))
 #define FLOATT      1
@@ -34,8 +33,10 @@ void copyimg(img_t*, img_t*);
 /* Methods to generate sinograms */
 void make_sinogram(img_t*, int, int, int);
 void allocate_image(img_t*, int, int, int);
-double ireadbuf(img_t*, double, double, int);
+double ireadbuf(img_t*, double, double);
 double readbuf_flt (img_t*, int, int);
+void handback(img_t*, img_t*);
+void freebuf(img_t*);
 
 
 #endif

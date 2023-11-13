@@ -211,7 +211,6 @@ void make_sinogram(img_t *img){
     img_t sinogram, tracegram;
     float s1x, s1y, s2x, s2y, sdx, sdy;
     int a,cnt,line,column,xm,ym,ix,iy,sc,nv,aw2;
-    uint64_t idx;
     float x1,y1,x2,y2,h,dx,dy,x,y;
     float* p;   
     rgbtriplet* cp; 
@@ -240,7 +239,7 @@ void make_sinogram(img_t *img){
 		sc++;
     }
 
-    line=0; idx=0; sc=0;
+    line=0; sc=0;
 	for (phi=0; phi<360; phi+=deltaphi)	/* One full revolution including redundancy */
 	{
 /*		s1x = - (d+2)*costbl[sc]; s1y = - (d+2)*sintbl[sc];	   Source midpoint */
@@ -292,7 +291,9 @@ void make_sinogram(img_t *img){
 		sc++;
 	}
 
-
+    handback(img, &sinogram);
+    freebuf(&tracegram);
+	free(sintbl); free(costbl);
 } // make_sinogram
 
 void allocate_image(img_t *img, int x, int y, int type) {
@@ -313,9 +314,7 @@ void allocate_image(img_t *img, int x, int y, int type) {
 
 double ireadbuf(img_t *img, double x, double y) {
     double a1,a2,a3,a4,a5,a6;	/* 4 nearest neighbors */
-    double xval[4];				/* 4 row interpolations in bi-cubic */
-    double A[4];				/* Cubic interpolation coefficents */
-    int x1,x2,y1,y2,i;
+    int x1,x2,y1,y2;
 
     x1=floor (x); x2=floor (x+1);	/* Determine the 4 neighbors */
     y1=floor (y); y2=floor (y+1);
@@ -340,3 +339,17 @@ double readbuf_flt (img_t *img, int x, int y) {
     return p4[x+img->xmax*(y+img->ymax)];
 	
 } // readbuf_flt
+
+void handback(img_t *dest, img_t *src) {
+	freebuf (dest);
+	dest->data = src->data; 
+	dest->xmax = src->xmax;
+	dest->ymax = src->ymax;
+	//make_minmax (dest);
+}
+
+void freebuf(img_t *img) {
+	if (img->data) free(img->data);
+	img->data = NULL;
+	img->xmax = img->ymax = 0;
+}
