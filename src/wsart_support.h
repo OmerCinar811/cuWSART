@@ -11,6 +11,12 @@
 #define RGBTRPT     2
 #define ARRWID      512
 #define PHI		(phi*0.017453293)
+#define SIN(X)		(sin((X)*1.7453295199e-2))
+#define COS(X)		(cos((X)*1.7453295199e-2))
+#ifndef MIN
+#define MIN(X,Y)	((X)>(Y)? (Y): (X))
+#endif
+
 
 typedef struct {
     uint64_t xmax;
@@ -31,7 +37,7 @@ int write_tiff(const char*, img_t*);
 void copyimg(img_t*, img_t*);
 
 /* Methods to generate sinograms */
-void make_sinogram(img_t*, int, int, int);
+void make_sinogram(img_t*);
 void allocate_image(img_t*, int, int, int);
 double ireadbuf(img_t*, double, double);
 double readbuf_flt (img_t*, int, int);

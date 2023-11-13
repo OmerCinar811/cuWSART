@@ -204,107 +204,86 @@ void copyimg(img_t *in, img_t *out) {
 // Assume parallel beam with 1 degree ingrements //
 // default interporlate is bilinear
 // z is 1
-// arraywidth is 512 for detector arr
+// arraywidth is 512 for    detector arr
 void make_sinogram(img_t *img){
-    float d, deltad;
+    float deltad;
     float deltaphi, phi;
-    img_t sinogram, tracegram;
-    float s1x, s1y, s2x, s2y, sdx, sdy;
-    int a,cnt,line,column,xm,ym,ix,iy,sc,nv,aw2;
-    float x1,y1,x2,y2,h,dx,dy,x,y;
-    float* p;   
-    rgbtriplet* cp; 
-    rgbtriplet r1,r2;   
-    double buf, atten;  
-    double *sintbl, *costbl;    
+    img_t sinogram;
+    float s1x,s1y,s2x,s2y;		/* Source and detector midpoints; offset */
+    int a,d,t,line,xm,ym,nv,aw2;
+    float* p;
+    double buf, atten;
+    double cphi, sphi;
 
-    deltaphi = 1;
-    nv = (int) (0.5+360.0/deltaphi);
-    xm = img->xmax; ym = img->ymax;
-    aw2 = 256; /* 512/2 */
+	/* Get memory for the sinogram image */
+	
+	deltaphi = 1;					/* Angular increment in degrees */
+	nv = 360.0;	/* Number of views */
+	xm = img->xmax; ym = img->ymax;		/* we use that all over the place */
+	aw2 = ARRWID/2;					/* Midpoint of detector array */
+	d = MIN(xm,ym);						/* Diameter of largest circle completely inside box */
+	deltad = (float)d/(float)ARRWID;	/* Size of one detector element in image pixels */
 
-    allocate_image(&sinogram, ARRWID, nv, FLOATT);
-    p = (float*)sinogram.data;
-    allocate_image(&tracegram, 2*xm, 2*ym, RGBTRPT);
-    cp = (rgbtriplet*)tracegram.data;
-    d = 0.5*sqrt( SQR(xm) + SQR(ym));
-
-    deltad = 2*d/ARRWID;
-    sintbl = (double*)calloc(nv ,sizeof(double));
-    costbl = (double*)calloc(nv ,sizeof(double));
-    sc = 0;
-    for(phi = 0; phi < 360; phi += deltaphi) { // one revolution
-        sintbl[sc] = cos (PHI);
-		costbl[sc] = -sin (PHI);
-		sc++;
-    }
-
-    line=0; sc=0;
+	allocate_image (&sinogram, ARRWID, nv, FLOATT);
+	p = (float*)sinogram.data;
+	
+    line=0;
 	for (phi=0; phi<360; phi+=deltaphi)	/* One full revolution including redundancy */
 	{
-/*		s1x = - (d+2)*costbl[sc]; s1y = - (d+2)*sintbl[sc];	   Source midpoint */
-		s1x = - d*costbl[sc]; s1y = - d*sintbl[sc];			/* Source midpoint */
-		s2x = -s1x; s2y = -s1y;								/* Detector midpoint */
-		column=0;
+		/* We can pre-compute cos phi and sin phi for this angle */
 
-		for (a = 0; a<ARRWID; a++)				/* One detector line */
+		cphi = COS(phi);
+		sphi = SIN(phi);
+		/* Now compute one projection (one view) */
+
+		for (a=0; a<ARRWID; a++)		/* Run along the detector array */
 		{
-			sdx = -deltad*((a-aw2)*sintbl[sc]);
-			sdy =  deltad*((a-aw2)*costbl[sc]);			/* Detector element offset */
-			x2=s2x+sdx; y2=s2y+sdy;					/* Endpoint of beam */
-			x1=s1x+sdx; y1=s1y+sdy;				/* Startpoint at source */
-			dx = x2-x1; dy= y2-y1;
-			h = sqrt (SQR(dx)+SQR(dy));				/* Path length */
-			dx /= h; dy /= h;						/* steps for unit step length */
-			
-			/* Walk along the beam path */
-			
-			x=x1; y=y1; cnt=0; atten=0.0;
-			do
+			atten=0;						/* Cumulative attenuation along ray */
+			for (t=0; t<d; t++)				/* Run along one line */
 			{
-				buf = ireadbuf(img, x+0.5*xm,y+0.5*ym);
-				atten += buf;
-				
-				/* This part generates the X-ray traces in the secondary wnd */
-				if ((x+xm>=0) && (x+xm<2*xm) && (y+ym>=0) && (y+ym<2*ym))
+				/* convert a and t into x,y of an unrotated image coordinate system */
+
+				s1x = t-d/2;				/* horizontal offset from image center */
+				s1y = (a-aw2)*deltad;		/* Vertical offset of ray from image center */
+
+				/* Rotate s1x,s1y into the image coordinate system */
+
+				s2x = xm/2 + s1x*sphi - s1y*cphi;
+				s2y = ym/2 -s1x*cphi - s1y*sphi;
+
+				/* add image value at that point to total attenuation */
+
+				if ((s2x>=0) && (s2x<xm) && (s2y>=0) && (s2y<ym))
 				{
-					r2 = (rgbtriplet){0,0,0};
-					r2.blue = (int) (10.0+240*phi/360);
-					r2.red = 255-r2.blue;
-					r1=r2; r1.green=255;
-					
-					ix = (int) (0.5+x); iy = (int) (0.5+y);
-
-					if ((x+0.5*xm>=0) && (x+0.5*xm<xm) && (y+0.5*ym>=0) && (y+0.5*ym<ym))
-						cp[ ( (ix+xm) + 2*xm*(iy+ym) )] = r1;
-					else
-						cp[ ( (ix+xm) + 2*xm*(iy+ym) )] = r2;
+					buf = ireadbuf (img, s2x, s2y);
+					atten += buf;
 				}
+                //printf("phi is %f, a is %d, t is %d, atten is %f\n", phi, a, t, atten);
 
-				x+=dx; y+=dy; cnt++;
 			}
-			while ( (SQR(x-x2)+SQR(y-y2)) > 1.0);	/* Proximity of endpoint */
-			p[column + (ARRWID)*line] = atten;
-			column++;
+            //printf("phi is %f, a is %d, t is %d, atten is %f\n", phi, a, t, atten);
+
+			/* Place attenuation in sinogram buffer */
+            p[a + (line*sinogram.xmax)] = atten;
 		}
 		line++;
-		sc++;
 	}
 
-    handback(img, &sinogram);
-    freebuf(&tracegram);
-	free(sintbl); free(costbl);
+	handback (img, &sinogram);
+	//if (!macrorun) reset_progress ();
+
 } // make_sinogram
 
 void allocate_image(img_t *img, int x, int y, int type) {
     img->xmax = x;
     img->ymax = y;
-
+    printf("got here and x and y is %d %d\n", x, y);
     if(type == 1) { //float
         img->data = (float**)calloc(x*y, 4);    
     } else if(type == 2) { //rgb triplet
-        img->data = (float**)calloc(x*y, 3);
+        //img->data = (float**)calloc(x*y, 3);
     }
+    //img->data = (float**)calloc(x*y, 4);
 
     if(img->data == NULL) {
         printf("Could not allocate image\n");
@@ -313,20 +292,26 @@ void allocate_image(img_t *img, int x, int y, int type) {
 } // allocate_image
 
 double ireadbuf(img_t *img, double x, double y) {
-    double a1,a2,a3,a4,a5,a6;	/* 4 nearest neighbors */
-    int x1,x2,y1,y2;
+    //double a1,a2,a3,a4,a5,a6;	/* 4 nearest neighbors */
+    int x1;
+    int y1;
 
-    x1=floor (x); x2=floor (x+1);	/* Determine the 4 neighbors */
-    y1=floor (y); y2=floor (y+1);
-    a1 = readbuf_flt (img,x1,y1);
-    a2 = readbuf_flt (img,x2,y1);
-    a3 = readbuf_flt (img,x1,y2);
-    a4 = readbuf_flt (img,x2,y2);
+    // x1=floor(x); x2=floor(x+1);	/* Determine the 4 neighbors */
+    // y1=floor(y); y2=floor(y+1);
+    // a1 = readbuf_flt (img,x1,y1);
+    // a2 = readbuf_flt (img,x2,y1);
+    // a3 = readbuf_flt (img,x1,y2);
+    // a4 = readbuf_flt (img,x2,y2);
+    x1 = floor (0.5+x);
+    y1 = floor (0.5+y);
+    printf("x1 is %d and y1 is %d\n", x1, y1);
+    // exit(0);
+    return readbuf_flt (img, x1,y1);
     
-    x = x-x1; y = y-y1;	/* Should always be in range 0...1 */
-    a5 = (1-x)*a1 + x*a2;
-    a6 = (1-x)*a3 + x*a4;
-    return (1-y)*a5 + y*a6;
+    // x = x-x1; y = y-y1;	/* Should always be in range 0...1 */
+    // a5 = (1-x)*a1 + x*a2;
+    // a6 = (1-x)*a3 + x*a4;
+    // return (1-y)*a5 + y*a6;
 } // ireadbuf
 
 double readbuf_flt (img_t *img, int x, int y) {
@@ -336,6 +321,8 @@ double readbuf_flt (img_t *img, int x, int y) {
 	if (y<0) y=0; else if (y>=img->ymax) y=img->ymax-1;
  
 	p4=(float*)img->data;
+    float temp = p4[x+img->xmax*(y+img->ymax)];
+    printf("Temp is %f\n", temp);
     return p4[x+img->xmax*(y+img->ymax)];
 	
 } // readbuf_flt
@@ -349,7 +336,7 @@ void handback(img_t *dest, img_t *src) {
 }
 
 void freebuf(img_t *img) {
-	if (img->data) free(img->data);
+    if (img->data) free(img->data);
 	img->data = NULL;
 	img->xmax = img->ymax = 0;
 }
