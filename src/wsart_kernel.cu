@@ -9,9 +9,9 @@
  * 
  */
 
-__global__ void sinogram() {
-
-} // sinogram
+#include "math.h"
+#include "stdlib.h"
+#include "stdio.h"
 
 __global__ void wbp() {
 

@@ -1,8 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "wsart_support.h"
-// #include "png.h"
-
+#include "wsart_kernel.cu"
 /*
     Program flow                                ----------
                                                 V        |
@@ -22,8 +21,6 @@ int main(int argc, char const *argv[]) {
     const char *out_file_name;
     
     cudaError_t cuda_ret = cudaErrorUnknown;
-    //printf("got here");
-   // exit(0);
     
     if(argc == 1) {
         printf("\nERROR: Missing Input file and output file arguments\n\n");
@@ -45,13 +42,14 @@ int main(int argc, char const *argv[]) {
 
     img_t inimg;
     img_t outimg;
-    //printf("got here");
-    //exit(0);
     read_tiff(in_file_name, &inimg);
 
     copyimg(&inimg, &outimg);
 
     write_tiff(out_file_name, &outimg);
+
+
+    // copy original image before entering make sinogram
 
     return 0;
 }

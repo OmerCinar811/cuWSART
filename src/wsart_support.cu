@@ -198,3 +198,145 @@ void copyimg(img_t *in, img_t *out) {
     out->data = (float**)calloc(out->xmax*out->ymax, 4);
     memcpy(out->data, in->data, 4*out->xmax*out->ymax);
 }
+
+
+/* Methods to make sinogram */
+// Assume parallel beam with 1 degree ingrements //
+// default interporlate is bilinear
+// z is 1
+// arraywidth is 512 for detector arr
+void make_sinogram(img_t *img){
+    float d, deltad;
+    float deltaphi, phi;
+    img_t sinogram, tracegram;
+    float s1x, s1y, s2x, s2y, sdx, sdy;
+    int a,cnt,line,column,xm,ym,ix,iy,sc,nv,aw2;
+    uint64_t idx;
+    float x1,y1,x2,y2,h,dx,dy,x,y;
+    float* p;   
+    rgbtriplet* cp; 
+    rgbtriplet r1,r2;   
+    double buf, atten;  
+    double *sintbl, *costbl;    
+
+    deltaphi = 1;
+    nv = (int) (0.5+360.0/deltaphi);
+    xm = img->xmax; ym = img->ymax;
+    aw2 = 256; /* 512/2 */
+
+    allocate_image(&sinogram, ARRWID, nv, FLOATT);
+    p = (float*)sinogram.data;
+    allocate_image(&tracegram, 2*xm, 2*ym, RGBTRPT);
+    cp = (rgbtriplet*)tracegram.data;
+    d = 0.5*sqrt( SQR(xm) + SQR(ym));
+
+    deltad = 2*d/ARRWID;
+    sintbl = (double*)calloc(nv ,sizeof(double));
+    costbl = (double*)calloc(nv ,sizeof(double));
+    sc = 0;
+    for(phi = 0; phi < 360; phi += deltaphi) { // one revolution
+        sintbl[sc] = cos (PHI);
+		costbl[sc] = -sin (PHI);
+		sc++;
+    }
+
+    line=0; idx=0; sc=0;
+	for (phi=0; phi<360; phi+=deltaphi)	/* One full revolution including redundancy */
+	{
+/*		s1x = - (d+2)*costbl[sc]; s1y = - (d+2)*sintbl[sc];	   Source midpoint */
+		s1x = - d*costbl[sc]; s1y = - d*sintbl[sc];			/* Source midpoint */
+		s2x = -s1x; s2y = -s1y;								/* Detector midpoint */
+		column=0;
+
+		for (a = 0; a<ARRWID; a++)				/* One detector line */
+		{
+			sdx = -deltad*((a-aw2)*sintbl[sc]);
+			sdy =  deltad*((a-aw2)*costbl[sc]);			/* Detector element offset */
+			x2=s2x+sdx; y2=s2y+sdy;					/* Endpoint of beam */
+			x1=s1x+sdx; y1=s1y+sdy;				/* Startpoint at source */
+			dx = x2-x1; dy= y2-y1;
+			h = sqrt (SQR(dx)+SQR(dy));				/* Path length */
+			dx /= h; dy /= h;						/* steps for unit step length */
+			
+			/* Walk along the beam path */
+			
+			x=x1; y=y1; cnt=0; atten=0.0;
+			do
+			{
+				buf = ireadbuf(img, x+0.5*xm,y+0.5*ym);
+				atten += buf;
+				
+				/* This part generates the X-ray traces in the secondary wnd */
+				if ((x+xm>=0) && (x+xm<2*xm) && (y+ym>=0) && (y+ym<2*ym))
+				{
+					r2 = (rgbtriplet){0,0,0};
+					r2.blue = (int) (10.0+240*phi/360);
+					r2.red = 255-r2.blue;
+					r1=r2; r1.green=255;
+					
+					ix = (int) (0.5+x); iy = (int) (0.5+y);
+
+					if ((x+0.5*xm>=0) && (x+0.5*xm<xm) && (y+0.5*ym>=0) && (y+0.5*ym<ym))
+						cp[ ( (ix+xm) + 2*xm*(iy+ym) )] = r1;
+					else
+						cp[ ( (ix+xm) + 2*xm*(iy+ym) )] = r2;
+				}
+
+				x+=dx; y+=dy; cnt++;
+			}
+			while ( (SQR(x-x2)+SQR(y-y2)) > 1.0);	/* Proximity of endpoint */
+			p[column + (ARRWID)*line] = atten;
+			column++;
+		}
+		line++;
+		sc++;
+	}
+
+
+} // make_sinogram
+
+void allocate_image(img_t *img, int x, int y, int type) {
+    img->xmax = x;
+    img->ymax = y;
+
+    if(type == 1) { //float
+        img->data = (float**)calloc(x*y, 4);    
+    } else if(type == 2) { //rgb triplet
+        img->data = (float**)calloc(x*y, 3);
+    }
+
+    if(img->data == NULL) {
+        printf("Could not allocate image\n");
+        exit(1);
+    }
+} // allocate_image
+
+double ireadbuf(img_t *img, double x, double y) {
+    double a1,a2,a3,a4,a5,a6;	/* 4 nearest neighbors */
+    double xval[4];				/* 4 row interpolations in bi-cubic */
+    double A[4];				/* Cubic interpolation coefficents */
+    int x1,x2,y1,y2,i;
+
+    x1=floor (x); x2=floor (x+1);	/* Determine the 4 neighbors */
+    y1=floor (y); y2=floor (y+1);
+    a1 = readbuf_flt (img,x1,y1);
+    a2 = readbuf_flt (img,x2,y1);
+    a3 = readbuf_flt (img,x1,y2);
+    a4 = readbuf_flt (img,x2,y2);
+    
+    x = x-x1; y = y-y1;	/* Should always be in range 0...1 */
+    a5 = (1-x)*a1 + x*a2;
+    a6 = (1-x)*a3 + x*a4;
+    return (1-y)*a5 + y*a6;
+} // ireadbuf
+
+double readbuf_flt (img_t *img, int x, int y) {
+    float* p4;
+
+	if (x<0) x=0; else if (x>=img->xmax) x=img->xmax-1;
+	if (y<0) y=0; else if (y>=img->ymax) y=img->ymax-1;
+ 
+	p4=(float*)img->data;
+    return p4[x+img->xmax*(y+img->ymax)];
+	
+} // readbuf_flt
