@@ -45,7 +45,6 @@ int main(int argc, char const *argv[]) {
     read_tiff(in_file_name, &inimg);
 
     copyimg(&inimg, &outimg);
-    make_sinogram(&outimg);
 
     printf("got here\n\n");
     write_tiff(out_file_name, &outimg);

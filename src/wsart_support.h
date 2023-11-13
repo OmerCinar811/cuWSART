@@ -36,13 +36,6 @@ void read_tiff(const char*, img_t*);
 int write_tiff(const char*, img_t*);
 void copyimg(img_t*, img_t*);
 
-/* Methods to generate sinograms */
-void make_sinogram(img_t*);
-void allocate_image(img_t*, int, int, int);
-double ireadbuf(img_t*, double, double);
-double readbuf_flt (img_t*, int, int);
-void handback(img_t*, img_t*);
-void freebuf(img_t*);
 
 
 #endif
