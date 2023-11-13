@@ -151,10 +151,45 @@ void read_tiff(const char *filename, img_t *tiff) {
 
     tiff->data = (float**)calloc(tiff->xmax * tiff-> ymax, 4);
 
+
     TIFFGetField(tiff_handle, TIFFTAG_PLANARCONFIG, &planarconfig);
+    // printf("\nplanarconfig = %d\n", planarconfig);
     TIFFReadContigStripData(tiff_handle,4,bitspersample,tiff->data);
     TIFFClose(tiff_handle);
 }
 
-void write_tiff(const char *filename, img_t *tiff) {
+
+int tiffwrite (char* fname, img_t* img) {
+    
+    TIFF *tif;
+    char* p;
+
+	tif = TIFFOpen(fname, "w");
+	if (!tif) return -1;
+
+	/* Let's start with some general tags */
+
+	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, img->xmax);
+	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, img->ymax);
+	TIFFSetField(tif, TIFFTAG_COMPRESSION, 0);
+
+	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+	TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, (int)2);
+	TIFFSetField(tif, TIFFTAG_XRESOLUTION, 1200);
+	TIFFSetField(tif, TIFFTAG_YRESOLUTION, 1200);
+	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+
+    TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE,  32);
+    TIFFSetField(tif, TIFFTAG_PHOTOMETRIC,    PHOTOMETRIC_MINISBLACK);
+    TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT,   SAMPLEFORMAT_IEEEFP);
+    
+    p = (char*)img->data + 4*img->xmax*img->ymax;
+    TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, img->ymax);
+	TIFFWriteEncodedStrip(tif, 0, p, 4*img->xmax*img->ymax);
+
+	TIFFClose(tif);
+
+	return 0;
 }
